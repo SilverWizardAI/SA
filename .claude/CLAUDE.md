@@ -20,25 +20,34 @@ Strategic oversight and advisory for:
 
 **CRITICAL: ALL strategic state uses CC_Mem (MCP server), NOT auto-memory files.**
 
-### Session Start Protocol
+### ⚡ Token-Optimized Session Start Protocol
 
-**1. Load global quickstart:**
+**🔴 CRITICAL: Load ONLY what you need each session!**
+
+**Step 1 - Load last session state (FULL, not summary):**
 ```python
-mcp__gcc-memory__load_memory(instance="ALL", keywords="quickstart")
+mcp__gcc-memory__load_memory(instance="SA", keywords="last,next", summary_only=False)
 ```
+⏱️ *This is fast - loads only active session context, not all portfolios*
 
-**2. Load SA instance state:**
+**Step 2 - Load portfolio report on demand (when analyzing):**
 ```python
-mcp__gcc-memory__load_memory(instance="SA", keywords="last,next,strategic-context")
+mcp__gcc-memory__load_memory(instance="SA", keywords="portfolio-baseline", summary_only=False)
 ```
+⏱️ *Only load this when doing portfolio analysis/recommendations*
 
-**3. Brief status (10-15 lines max):**
+**Step 3 - Brief status (10-15 lines max):**
 ```
 # SA Status
 **State:** [Current Focus] | **Tokens:** [X]% | **Git:** [Clean/Staged]
-## Last: [Previous work from CC_Mem]
-## Next: [Upcoming priorities]
+## Last: [From CC_Mem "last" keyword]
+## Next: [From CC_Mem "next" keyword]
 ```
+
+**✅ Why this saves tokens:**
+- `summary_only=False` loads FULL details from saved checkpoints
+- Keywords are specific, not wildcard
+- Portfolio baseline loaded only when needed (not on every startup)
 
 ### During Work Protocol
 
