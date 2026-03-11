@@ -1,0 +1,12 @@
+{
+  "mcp": {
+    "global": {
+      "enabled": true,
+      "servers": ["gcc-memory", "gmsg"]
+    }
+  },
+  "autocomplete": {
+    "enabled": true
+  },
+  "debug": false
+}

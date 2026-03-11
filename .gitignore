@@ -1,0 +1,28 @@
+# Claude Code
+.claude/settings.local.json
+.claude/*.pid
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+package-lock.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env.local
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
