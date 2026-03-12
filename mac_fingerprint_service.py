@@ -138,18 +138,47 @@ class MacFingerprintService:
         Returns a SHA256 hash of the hardware serial.
         This is what's stored in the license database (never the raw serial).
 
+        Fingerprint is cached to disk to avoid expensive subprocess calls
+        in async contexts (FastAPI endpoints).
+
         Returns:
             str: SHA256 hash of the hardware serial
         """
-        # Return cached value if available
+        # Return cached value if available in memory
         if self._cached_fingerprint:
             return self._cached_fingerprint
 
+        # Check if fingerprint exists on disk
+        if self.FINGERPRINT_CACHE_FILE.exists():
+            try:
+                with open(self.FINGERPRINT_CACHE_FILE, 'r') as f:
+                    cached_data = json.load(f)
+                    self._cached_fingerprint = cached_data.get('fingerprint')
+                    if self._cached_fingerprint:
+                        logger.debug(f"Loaded fingerprint from cache: {self._cached_fingerprint[:16]}...")
+                        return self._cached_fingerprint
+            except Exception as e:
+                logger.warning(f"Failed to read cached fingerprint: {e}")
+
+        # Generate new fingerprint from serial
         serial = self.get_hardware_serial()
         fingerprint = hashlib.sha256(serial.encode()).hexdigest()
 
         # Cache for this session
         self._cached_fingerprint = fingerprint
+
+        # Cache to disk for future calls (if caching enabled)
+        if self.use_cache:
+            try:
+                self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+                with open(self.FINGERPRINT_CACHE_FILE, 'w') as f:
+                    json.dump({
+                        'fingerprint': fingerprint,
+                        'cached_at': datetime.now().isoformat()
+                    }, f)
+                logger.debug(f"Cached fingerprint to disk")
+            except Exception as e:
+                logger.warning(f"Failed to cache fingerprint to disk: {e}")
 
         logger.debug(f"Generated fingerprint: {fingerprint[:16]}...")
         return fingerprint
