@@ -25,7 +25,7 @@ from typing import Dict, Any
 # ============================================================================
 
 SERVER_URL = "http://localhost:8000"
-API_KEY = "test-api-key-12345"
+API_KEY = "dev-key-12345"
 
 HEADERS = {
     "X-API-Key": API_KEY,
@@ -110,7 +110,11 @@ def demo_complete_flow():
 
     license_data = {
         "app": "pqti",
-        "features_to_enable": [0, 1, 2]  # Enable features 0, 1, 2
+        "access_levels": {
+            "0": 15,  # Feature 0: perpetual (access level 15)
+            "1": 6,   # Feature 1: basic paid
+            "2": 4    # Feature 2: custom trial
+        }
     }
 
     result = make_request("POST", "/api/v1/licenses/generate", license_data)
@@ -120,6 +124,10 @@ def demo_complete_flow():
     key_id = result.get("key_id")
     initial_signature = result.get("signature")
     initial_features = result.get("features_hex")
+
+    if not key_id:
+        print(f"\n❌ Failed to generate license")
+        return
 
     print(f"\n✓ License generated successfully!")
     print(f"  Key ID: {key_id}")
@@ -134,7 +142,7 @@ def demo_complete_flow():
     refresh_data = {
         "key_id": key_id,
         "app": "pqti",
-        "features_hex": initial_features  # Could add more features here
+        "features_hex": initial_features  # Refresh with same features
     }
 
     result = make_request("POST", "/api/v1/licenses/refresh", refresh_data)
