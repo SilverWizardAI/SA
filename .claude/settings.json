@@ -1,9 +1,74 @@
 {
-  "mcp": {
-    "global": {
-      "enabled": true,
-      "servers": ["gcc-memory", "gmsg"]
+  "env": {
+    "ANTHROPIC_MODEL": "claude-haiku-4-5-20251001"
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Bash",
+      "Grep",
+      "Glob",
+      "ListDir",
+      "Task",
+      "WebFetch",
+      "WebSearch",
+      "NotebookRead",
+      "NotebookEdit",
+      "TodoRead",
+      "TodoWrite",
+      "Skill(*)",
+      "mcp__gcc-memory__*",
+      "mcp__gmsg__*",
+      "mcp__gpyqt-instrument__*"
+    ],
+    "deny": []
+  },
+  "defaultMode": "ask",
+  "autonomy": {
+    "description": "FULL autonomy within SA folder only",
+    "scope": {
+      "allowed_paths": [
+        "/Users/stevedeighton/Library/CloudStorage/Dropbox/A_Coding/SA/**"
+      ],
+      "read_access_paths": [
+        "/Users/stevedeighton/Library/CloudStorage/Dropbox/A_Coding/**"
+      ],
+      "git": {
+        "commit": "always",
+        "push": "always",
+        "branch": "always",
+        "description": "Full git autonomy within SA folder"
+      },
+      "bash": {
+        "local_commands": "always",
+        "git_commands": "always",
+        "description": "Full bash autonomy within SA folder"
+      }
+    },
+    "restrictions": {
+      "forbidden_paths": [
+        "/Users/stevedeighton/Documents/**",
+        "/Users/stevedeighton/Desktop/**",
+        "/Users/stevedeighton/Downloads/**",
+        "/Users/stevedeighton/Pictures/**",
+        "/Users/stevedeighton/Library/CloudStorage/Dropbox/A_Coding/AI/**",
+        "/Users/stevedeighton/Library/CloudStorage/Dropbox/A_Coding/BT/**",
+        "/Users/stevedeighton/Library/CloudStorage/Dropbox/A_Research/**"
+      ],
+      "description": "NO autonomy outside SA folder - must ask permission"
     }
+  },
+  "mcpServers": {
+    "gmsg": {
+      "command": "/Users/stevedeighton/Library/CloudStorage/Dropbox/A_Coding/MM/run_gmsg_mcp.sh"
+    }
+  },
+  "allowedMcpTools": {
+    "gmsg": [
+      "*"
+    ]
   },
   "autocomplete": {
     "enabled": true
