@@ -287,6 +287,59 @@ def log_audit(action: str, key_id: str = None, app: str = None, result: str = "s
 
 
 # ============================================================================
+# FAKE PAYMENT PROCESSOR (for testing)
+# ============================================================================
+
+class FakePaymentProcessor:
+    """
+    Simulates a payment processor (e.g., Stripe) for testing.
+
+    In production, this would call real payment APIs.
+    For testing, we can manually confirm payments via admin endpoint.
+    """
+
+    # In-memory store of payment states (token -> {status, amount, timestamp})
+    _payments = {}
+
+    @classmethod
+    def initiate_payment(cls, token: str, amount_cents: int) -> dict:
+        """Initiate a payment (creates pending payment)."""
+        cls._payments[token] = {
+            "status": "pending",
+            "amount_cents": amount_cents,
+            "created_at": datetime.now().isoformat(),
+            "paid_at": None
+        }
+        return {"status": "pending", "token": token, "amount_cents": amount_cents}
+
+    @classmethod
+    def confirm_payment(cls, token: str) -> dict:
+        """Confirm a pending payment (admin endpoint use only)."""
+        if token not in cls._payments:
+            raise HTTPException(status_code=404, detail="Payment not found")
+
+        payment = cls._payments[token]
+        if payment["status"] != "pending":
+            raise HTTPException(status_code=400, detail=f"Payment already {payment['status']}")
+
+        payment["status"] = "paid"
+        payment["paid_at"] = datetime.now().isoformat()
+        return payment
+
+    @classmethod
+    def get_payment_status(cls, token: str) -> dict:
+        """Get payment status."""
+        if token not in cls._payments:
+            return {"status": "not_found", "token": token}
+        return cls._payments[token]
+
+    @classmethod
+    def reset_payments(cls):
+        """Reset all payments (for testing)."""
+        cls._payments.clear()
+
+
+# ============================================================================
 # TEST DATA SETUP
 # ============================================================================
 
@@ -695,6 +748,9 @@ async def purchase_pqti_features(
         conn.commit()
         conn.close()
 
+        # Initiate payment with fake processor
+        FakePaymentProcessor.initiate_payment(token, amount_cents)
+
         # Log audit
         log_audit("purchase_initiated", key_id=key_id, app=app)
 
@@ -812,14 +868,17 @@ async def check_purchase_status(
         if not purchase_row:
             raise HTTPException(status_code=404, detail="Purchase not found")
 
-        if purchase_row["status"] == "pending":
+        # Check payment processor status
+        payment_status = FakePaymentProcessor.get_payment_status(token)
+
+        if payment_status["status"] == "pending":
             conn.close()
             return {
                 "status": "pending",
                 "token": token
             }
 
-        elif purchase_row["status"] == "paid":
+        elif payment_status["status"] == "paid":
             # Get license details
             cursor.execute("""
                 SELECT * FROM pqti_licenses WHERE key_id = ?
@@ -898,6 +957,60 @@ async def check_purchase_status(
         raise
     except Exception as e:
         logger.error(f"Failed to check purchase: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/test/confirm-payment/{token}")
+async def confirm_payment_admin(
+    token: str,
+    x_api_key: Optional[str] = Header(None)
+):
+    """
+    [ADMIN ENDPOINT - LOCAL TESTING ONLY]
+    Manually confirm a pending payment for demo purposes.
+
+    This simulates a successful Stripe payment webhook in production.
+    Use this in demo scripts to trigger payment confirmation.
+
+    Response (200):
+    {
+        "status": "paid",
+        "token": "purch-uuid",
+        "amount_cents": 4999,
+        "paid_at": "2026-03-13T..."
+    }
+    """
+    try:
+        validate_api_key(x_api_key)
+
+        # Confirm payment in fake processor
+        payment = FakePaymentProcessor.confirm_payment(token)
+
+        # Update database to mark purchase as paid
+        conn = get_db()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE pqti_purchases SET status = 'paid' WHERE token = ?
+        """, (token,))
+
+        conn.commit()
+        conn.close()
+
+        # Log audit
+        log_audit("payment_confirmed", details={"token": token, "amount_cents": payment["amount_cents"]})
+
+        return {
+            "status": "paid",
+            "token": token,
+            "amount_cents": payment["amount_cents"],
+            "paid_at": payment["paid_at"]
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to confirm payment: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
