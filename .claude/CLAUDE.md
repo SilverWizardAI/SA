@@ -29,6 +29,9 @@ Strategic oversight and advisory for:
 **Step 1 - Load last session state (FULL, not summary):**
 ```python
 mcp__gcc-memory__load_memory(instance="SA", keywords="last,next", summary_only=False)
+
+# If unclear what you saved, check recent history:
+mcp__gcc-memory__last_saves(instance="SA", count=10)
 ```
 ⏱️ *This is fast - loads only active session context, not all portfolios*
 
