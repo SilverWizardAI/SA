@@ -63,10 +63,16 @@
   "mcpServers": {
     "gmsg": {
       "command": "/Users/stevedeighton/Library/CloudStorage/Dropbox/A_Coding/MM/run_gmsg_mcp.sh"
+    },
+    "conf-tools": {
+      "command": "/Users/stevedeighton/Library/CloudStorage/Dropbox/A_Coding/CONF/run_conf_tools_mcp.sh"
     }
   },
   "allowedMcpTools": {
     "gmsg": [
+      "*"
+    ],
+    "conf-tools": [
       "*"
     ]
   },
